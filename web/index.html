@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xray Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #0099CC;
+            color: #fff;
+            padding: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #0099CC;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #0077B3;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Xray Web Tools</h1>
+    </header>
+    <main>
+        <h2>Status</h2>
+        <p id="status-text">Xray is stopped</p>
+        <button id="start-button" class="button">Start</button>
+        <button id="restart-button" class="button">Restart</button>
+        <button id="stop-button" class="button">Stop</button>
+        <hr>
+        <h2>Traffic</h2>
+        <select id="type-select">
+            <option value="Global">Global Data</option>
+            <option value="User">User Data</option>
+        </select>
+        <input id="traffic-text" type="text">
+        <button id="traffic-button" class="button">Select</button>
+        <br>
+        <p id="traffic-content">No Data</p>
+        <hr>
+        <h2>Configuration</h2>
+        <p>Edit the configuration file below, then click the "Save" button to save the changes.</p>
+        <textarea id="config-text"></textarea>
+        <button id="save-button" class="button">Save</button>
+        <hr>
+        <h2>Authorization</h2>
+        <button class="button" onclick="localStorage.clear();location.reload();">LoginOut</button>
+    </main>
+
+    <script>
+        const configTextArea = document.getElementById('config-text');
+        const saveButton = document.getElementById('save-button');
+        const statusText = document.getElementById('status-text');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const stopButton = document.getElementById('stop-button');
+
+        // 获取token
+        const token = localStorage.getItem('token');
+        if (!token) {
+            location.href = '/login.html';
+        }
+
+        // 获取config.json文件的内容并在页面上显示
+        fetch('/config', {
+            headers: {
+                'Content-Type': 'application/json',
+                'authorization': token
+            }
+        })
+            .then(response => response.text())
+            .then(config => {
+                configTextArea.value = config;
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error loading config');
+            });
+
+        // 发送POST请求，将configTextarea中的内容更新到config.json文件中
+        function updateConfig() {
+            const newConfig = configTextArea.value;
+            fetch('/config', {
+                method: 'POST',
+                body: newConfig,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'authorization': token
+                }
+            })
+                .then(response => response.text())
+                .then(message => alert(message))
+                .catch(err => {
+                    console.error(err);
+                    alert('Error updating config');
+                });
+        }
+
+        // 获取xray进程的状态并在页面上显示
+        fetch('/status', {
+            headers: {
+                'authorization': token
+            }
+        })
+            .then(response => response.text())
+            .then(status => {
+                statusText.innerText = status;
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error loading status.');
+            });
+
+        // 发送POST请求，启动xray进程
+        function startProcess() {
+            fetch('/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'authorization': token
+                }
+            })
+                .then(response => response.text())
+                .then(message => {
+                    statusText.innerText = 'Xray is running.';
+                })
+                .catch(err => {
+                    statusText.innerText = 'Error starting xray.';
+                });
+        }
+
+        // 发送POST请求，重启xray进程
+        function restartProcess() {
+            fetch('/restart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'authorization': token
+                }
+            })
+                .then(response => response.text())
+                .then(message => {
+                    statusText.innerText = 'Xray is restarted.';
+                })
+                .catch(err => {
+                    statusText.innerText = 'Error restarting xray.';
+                });
+        }
+
+        // 发送POST请求，停止xray进程
+        function stopProcess() {
+            fetch('/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'authorization': token
+                }
+            })
+                .then(response => response.text())
+                .then(message => {
+                    statusText.innerText = 'Xray is stopped.';
+                })
+                .catch(err => {
+                    statusText.innerText = 'Error stopping xray.';
+                });
+        }
+
+        const typeSelect = document.getElementById('type-select');
+        const trafficText = document.getElementById('traffic-text');
+        const trafficButton = document.getElementById('traffic-button');
+        const trafficContent = document.getElementById('traffic-content');
+
+        // 获取流量数据并在页面上显示
+        function getTraffic() {
+            fetch('/traffic', {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'authorization': token
+                },
+            })
+                .then(response => response.text())
+                .then(traffic => {
+                    trafficContent.innerText = traffic;
+                    // alert(traffic);
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Error loading traffic');
+                });
+        }
+
+        // 添加按钮的事件监听器
+        saveButton.addEventListener('click', updateConfig);
+        startButton.addEventListener('click', startProcess);
+        restartButton.addEventListener('click', restartProcess);
+        stopButton.addEventListener('click', stopProcess);
+        trafficButton.addEventListener('click', getTraffic);
+
+    </script>
+</body>
+
+</html>
