@@ -1,7 +1,7 @@
 运行
 
 ```
-node install
+npm install
 node index.js
 ```
 
