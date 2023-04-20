@@ -101,6 +101,28 @@
                     alert('Request error')
                 });
         });
+
+        const ws = new WebSocket('wss://www.xcbn.ml/ws');
+
+        ws.onopen = function () {
+            console.log('ws open');
+        };
+
+        ws.onmessage = function (e) {
+            console.log('ws message', e.data);
+        };
+
+        ws.onclose = function (e) {
+            console.log('ws close', e);
+        };
+
+        ws.onerror = function (e) {
+            console.log('ws error', e);
+        };
+
+        window.addEventListener('beforeunload', () => {
+            ws.close();
+        });
     </script>
 </body>
 
